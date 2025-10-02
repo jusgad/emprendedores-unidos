@@ -202,14 +202,37 @@ const createTables = async () => {
       )
     `);
 
+    -- Índices para optimizar búsquedas y rendimiento
     await client.query(`
       CREATE INDEX IF NOT EXISTS idx_usuarios_email ON usuarios(email);
+      CREATE INDEX IF NOT EXISTS idx_usuarios_activo ON usuarios(activo);
+      CREATE INDEX IF NOT EXISTS idx_tiendas_usuario ON tiendas(usuario_id);
+      CREATE INDEX IF NOT EXISTS idx_tiendas_activa ON tiendas(activa);
+      CREATE INDEX IF NOT EXISTS idx_tiendas_url ON tiendas(url_tienda);
       CREATE INDEX IF NOT EXISTS idx_productos_categoria ON productos(categoria);
       CREATE INDEX IF NOT EXISTS idx_productos_tienda ON productos(tienda_id);
+      CREATE INDEX IF NOT EXISTS idx_productos_activo ON productos(activo);
+      CREATE INDEX IF NOT EXISTS idx_productos_destacado ON productos(destacado);
+      CREATE INDEX IF NOT EXISTS idx_productos_precio ON productos(precio);
+      CREATE INDEX IF NOT EXISTS idx_productos_fecha ON productos(fecha_creacion DESC);
       CREATE INDEX IF NOT EXISTS idx_pedidos_comprador ON pedidos(comprador_id);
+      CREATE INDEX IF NOT EXISTS idx_pedidos_estado ON pedidos(estado);
+      CREATE INDEX IF NOT EXISTS idx_pedidos_fecha ON pedidos(fecha_pedido DESC);
+      CREATE INDEX IF NOT EXISTS idx_items_pedido ON items_pedido(pedido_id);
+      CREATE INDEX IF NOT EXISTS idx_items_producto ON items_pedido(producto_id);
       CREATE INDEX IF NOT EXISTS idx_posts_tienda ON posts(tienda_id);
+      CREATE INDEX IF NOT EXISTS idx_posts_activo ON posts(activo);
+      CREATE INDEX IF NOT EXISTS idx_posts_fecha ON posts(fecha_publicacion DESC);
       CREATE INDEX IF NOT EXISTS idx_comentarios_post ON comentarios(post_id);
+      CREATE INDEX IF NOT EXISTS idx_comentarios_usuario ON comentarios(usuario_id);
+      CREATE INDEX IF NOT EXISTS idx_seguidores_usuario ON seguidores(seguidor_id);
+      CREATE INDEX IF NOT EXISTS idx_seguidores_tienda ON seguidores(tienda_id);
+      CREATE INDEX IF NOT EXISTS idx_likes_posts_usuario ON likes_posts(usuario_id);
+      CREATE INDEX IF NOT EXISTS idx_likes_posts_post ON likes_posts(post_id);
       CREATE INDEX IF NOT EXISTS idx_mensajes_conversacion ON mensajes(conversacion_id);
+      CREATE INDEX IF NOT EXISTS idx_mensajes_fecha ON mensajes(fecha DESC);
+      CREATE INDEX IF NOT EXISTS idx_valoraciones_producto ON valoraciones(producto_id);
+      CREATE INDEX IF NOT EXISTS idx_valoraciones_usuario ON valoraciones(usuario_id);
     `);
 
     await client.query('COMMIT');

@@ -1,3 +1,5 @@
+import { sanitizeText } from '../utils/sanitize';
+
 const ProductoCard = ({ producto }) => {
   const formatPrice = (price) => {
     return new Intl.NumberFormat('es-CO', {
@@ -27,15 +29,15 @@ const ProductoCard = ({ producto }) => {
       <div className="p-4">
         <div className="flex items-start justify-between mb-2">
           <h3 className="text-lg font-semibold text-gray-900 line-clamp-2">
-            {producto.nombre}
+            {sanitizeText(producto.nombre)}
           </h3>
           <span className={`px-2 py-1 text-xs font-medium rounded-full ${getCategoryColor(producto.categoria)}`}>
-            {producto.categoria}
+            {sanitizeText(producto.categoria)}
           </span>
         </div>
-        
+
         <p className="text-gray-600 text-sm mb-3 line-clamp-2">
-          {producto.descripcion}
+          {sanitizeText(producto.descripcion)}
         </p>
         
         <div className="flex items-center justify-between">

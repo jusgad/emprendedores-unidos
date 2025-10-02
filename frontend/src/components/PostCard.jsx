@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { sanitizeText, sanitizeUrl } from '../utils/sanitize';
 
 const PostCard = ({ post }) => {
   const [likes, setLikes] = useState(post.likes);
@@ -44,13 +45,13 @@ const PostCard = ({ post }) => {
         </div>
         
         <p className="text-gray-800 mb-4 leading-relaxed">
-          {post.contenido}
+          {sanitizeText(post.contenido)}
         </p>
-        
-        {post.imagenUrl && (
+
+        {post.imagenUrl && sanitizeUrl(post.imagenUrl) && (
           <div className="mb-4">
             <img
-              src={post.imagenUrl}
+              src={sanitizeUrl(post.imagenUrl)}
               alt="Imagen del post"
               className="w-full h-64 object-cover rounded-lg bg-gray-100"
               onError={(e) => {

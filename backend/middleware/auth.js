@@ -9,8 +9,13 @@ const authenticateToken = async (req, res, next) => {
     return res.status(401).json({ error: 'Token de acceso requerido' });
   }
 
+  if (!process.env.JWT_SECRET) {
+    console.error('JWT_SECRET no configurado');
+    return res.status(500).json({ error: 'Error de configuración del servidor' });
+  }
+
   try {
-    const decoded = jwt.verify(token, process.env.JWT_SECRET || 'fallback-secret-key');
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
     
     const result = await pool.query(
       'SELECT id, email, rol, nombre FROM usuarios WHERE id = $1 AND activo = true',
@@ -106,7 +111,7 @@ const optionalAuth = async (req, res, next) => {
   }
 
   try {
-    const decoded = jwt.verify(token, process.env.JWT_SECRET || 'fallback-secret-key');
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
     
     const result = await pool.query(
       'SELECT id, email, rol, nombre FROM usuarios WHERE id = $1 AND activo = true',

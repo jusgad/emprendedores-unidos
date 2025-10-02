@@ -1,6 +1,10 @@
 const express = require('express');
 const cors = require('cors');
 const http = require('http');
+const helmet = require('helmet');
+const rateLimit = require('express-rate-limit');
+const mongoSanitize = require('express-mongo-sanitize');
+const hpp = require('hpp');
 require('dotenv').config();
 
 const { testConnection } = require('./db/connection');
@@ -19,16 +23,75 @@ const app = express();
 const server = http.createServer(app);
 const PORT = process.env.PORT || 3001;
 
-app.use(cors({
-  origin: process.env.FRONTEND_URL || 'http://localhost:5173',
-  credentials: true
+// Validar variables de entorno críticas
+if (!process.env.JWT_SECRET || process.env.JWT_SECRET === 'GENERAR_SECRET_SEGURO_MINIMO_64_CARACTERES') {
+  console.error('❌ ERROR: JWT_SECRET no configurado en .env');
+  process.exit(1);
+}
+
+// Seguridad HTTP headers
+app.use(helmet({
+  crossOriginEmbedderPolicy: false,
+  contentSecurityPolicy: {
+    directives: {
+      defaultSrc: ["'self'"],
+      styleSrc: ["'self'", "'unsafe-inline'"],
+      scriptSrc: ["'self'"],
+      imgSrc: ["'self'", "data:", "https:"],
+    },
+  },
 }));
+
+// Rate limiting global
+const limiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutos
+  max: 100, // 100 requests por IP
+  message: 'Demasiadas peticiones desde esta IP, intenta de nuevo más tarde',
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+app.use(limiter);
+
+// Rate limiting para autenticación más estricto
+const authLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 5, // 5 intentos de login
+  skipSuccessfulRequests: true,
+  message: 'Demasiados intentos de login, intenta de nuevo en 15 minutos'
+});
+
+// CORS configurado
+const corsOptions = {
+  origin: function (origin, callback) {
+    const allowedOrigins = [
+      process.env.FRONTEND_URL || 'http://localhost:5173',
+      'http://localhost:5173',
+      'http://localhost:3000'
+    ];
+    if (!origin || allowedOrigins.indexOf(origin) !== -1) {
+      callback(null, true);
+    } else {
+      callback(new Error('No permitido por CORS'));
+    }
+  },
+  credentials: true,
+  optionsSuccessStatus: 200
+};
+app.use(cors(corsOptions));
+
+// Body parsers con límites
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
+// Sanitización contra NoSQL injection y XSS
+app.use(mongoSanitize());
+
+// Protección contra HTTP Parameter Pollution
+app.use(hpp());
+
 app.use('/uploads', express.static('uploads'));
 
-app.use('/api/auth', authRoutes);
+app.use('/api/auth', authLimiter, authRoutes);
 app.use('/api/products', productRoutes);
 app.use('/api/tiendas', tiendaRoutes);
 app.use('/api/pedidos', pedidoRoutes);
@@ -60,17 +123,10 @@ app.get('/', (req, res) => {
   });
 });
 
-app.use((err, req, res, next) => {
-  console.error(err.stack);
-  res.status(500).json({ 
-    error: 'Error interno del servidor',
-    message: process.env.NODE_ENV === 'development' ? err.message : 'Algo salió mal'
-  });
-});
+const { errorHandler, notFound } = require('./middleware/errorHandler');
 
-app.use('*', (req, res) => {
-  res.status(404).json({ error: 'Endpoint no encontrado' });
-});
+app.use(notFound);
+app.use(errorHandler);
 
 const startServer = async () => {
   try {

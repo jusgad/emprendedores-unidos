@@ -3,9 +3,12 @@ const jwt = require('jsonwebtoken');
 const { pool } = require('../db/connection');
 
 const generateToken = (user) => {
+  if (!process.env.JWT_SECRET) {
+    throw new Error('JWT_SECRET no configurado');
+  }
   return jwt.sign(
     { id: user.id, email: user.email, rol: user.rol },
-    process.env.JWT_SECRET || 'fallback-secret-key',
+    process.env.JWT_SECRET,
     { expiresIn: '7d' }
   );
 };
